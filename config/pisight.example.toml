@@ -1,0 +1,126 @@
+# PiSight configuration example
+#
+# Copy to /etc/pisight/config.toml and edit. Every value below is the packaged default,
+# so an empty file behaves identically to this one.
+#
+# PiSight NEVER reads the Kismet API token from this file. The token lives only in
+# PISIGHT_KISMET_API_TOKEN, supplied through the systemd environment file
+# (/etc/pisight/pisight.env, root-readable only). Do not add a token here: this file is
+# world-readable and ends up in backups and support bundles.
+
+# Data source: "mock" generates synthetic observations and touches no radio.
+# "live" reads a local Kismet instance over its REST API, read-only.
+mode = "mock"
+
+
+[display]
+# The logical canvas is always 320x240. These are the *output* dimensions used when
+# fullscreen is true; the canvas is scaled to them with integer nearest-neighbour scaling.
+width = 320
+height = 240
+
+# true on the Raspberry Pi, false for desktop development.
+fullscreen = false
+
+# Frame rate ceiling. 30 is smooth on a Pi 5 and leaves plenty of CPU for Kismet.
+fps = 30
+
+# Desktop development only: draws the 320x240 canvas at this integer multiple
+# (3 gives a 960x720 window). Ignored when fullscreen is true.
+window_scale = 3
+
+# SDL video driver. Leave unset to let SDL choose.
+#   "kmsdrm" - Deployment profile A, direct DRM/KMS console with no desktop.
+#   "x11" or "wayland" - Deployment profile B, inside an existing desktop session.
+#   "dummy"  - headless; used by the test suite and CI.
+# An SDL_VIDEODRIVER environment variable always overrides this setting.
+# sdl_video_driver = "kmsdrm"
+
+
+[kismet]
+# Kismet's REST base URL. Keep this on loopback. Pointing PiSight at a Kismet instance
+# across a network exposes capture data to that network; see docs/THREAT_MODEL.md.
+base_url = "http://127.0.0.1:2501"
+
+# Kismet device view to read. "all" is the standard view.
+device_view = "all"
+
+# How much recent history to request. PiSight asks Kismet for devices/alerts seen within
+# this window rather than for everything, which is what bounds the response size.
+device_window_seconds = 300
+alert_window_seconds = 900
+
+# Hard client-side caps. Even if Kismet returns more, PiSight keeps at most this many,
+# so memory stays bounded in a very busy environment.
+max_devices = 50
+max_alerts = 25
+max_channels = 64
+
+
+[kismet.endpoints]
+# REST paths, exposed so a future Kismet change needs no code change. Every one is a read.
+system_status = "/system/status.json"
+system_timestamp = "/system/timestamp.json"
+packet_stats = "/packetchain/packet_stats.json"
+channels = "/channels/channels.json"
+datasources = "/datasource/all_sources.json"
+# {view} and {timestamp} are substituted at request time. A negative timestamp is Kismet's
+# "this many seconds ago" form, which is what bounds the query.
+devices_last_time = "/devices/views/{view}/last-time/{timestamp}/devices.json"
+alerts_last_time = "/alerts/last-time/{timestamp}/alerts.json"
+login_check = "/session/check_login"
+
+
+[polling]
+# How often the background worker asks Kismet for a new snapshot.
+interval_seconds = 2.0
+
+# Host health (CPU temperature, disk free) changes slowly; it is cached this long.
+host_health_interval_seconds = 10.0
+
+# Data older than this shows a STALE indicator in the status bar.
+stale_after_seconds = 10.0
+
+# Data older than this is treated as OFFLINE. Must be >= stale_after_seconds.
+offline_after_seconds = 30.0
+
+
+[http]
+connect_timeout_seconds = 2.0
+read_timeout_seconds = 4.0
+
+# Reconnect backoff after a failed poll: initial delay, growth factor, ceiling, and the
+# fraction of the delay randomised so several clients do not retry in lockstep.
+backoff_initial_seconds = 1.0
+backoff_factor = 2.0
+backoff_max_seconds = 30.0
+backoff_jitter = 0.25
+
+
+[privacy]
+# Show complete MAC addresses instead of the last four hex characters. Leave false unless
+# you have a specific reason: the default keeps a photograph of the screen non-identifying.
+show_full_mac = false
+
+# Show beaconed SSIDs. Set false to display MAC-derived labels only.
+show_ssid = true
+
+# These two are validated as false and PiSight refuses to start otherwise. They exist to
+# make the guarantee explicit and to fail loudly if a future change tries to relax it.
+enable_gps = false
+allow_uploads = false
+
+
+[storage]
+# Where Kismet writes its logs. PiSight only calls statvfs on this path to show free
+# space. It never reads, writes, rotates or deletes anything here.
+kismet_log_path = "/var/log/kismet"
+
+# Free space below this percentage shows an amber warning on the Alerts/System screen.
+low_space_warn_pct = 15.0
+
+
+[logging]
+# CRITICAL, ERROR, WARNING, INFO or DEBUG. Logs go to stderr, which systemd captures into
+# the journal; PiSight writes no log files of its own.
+level = "INFO"
