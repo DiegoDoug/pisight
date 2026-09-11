@@ -1,0 +1,11 @@
+{
+  "kismet.alert.timestamp": 1717243800,
+  "kismet.alert.list": [
+    {
+      "kismet.alert.timestamp": 1717243790.0,
+      "kismet.alert.severity": 15,
+      "kismet.alert.header": "DEAUTHFLOOD",
+      "kismet.alert.text": "Deauthentication burst observed"
+    }
+  ]
+}

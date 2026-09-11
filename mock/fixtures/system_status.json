@@ -1,0 +1,8 @@
+{
+  "kismet.system.devices.count": 412,
+  "kismet.system.sensors.temp": 51.25,
+  "kismet.system.version": "2024-07-R1",
+  "kismet.system.timestamp.start_sec": 1717200000,
+  "kismet.system.memory.rss": 148000,
+  "kismet.system.user": "kismet"
+}

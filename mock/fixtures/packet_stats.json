@@ -1,0 +1,7 @@
+{
+  "kismet.packetchain.processed": {
+    "kismet.common.rrd.last_value": 143,
+    "kismet.common.rrd.last_time": 1717243800,
+    "kismet.common.rrd.minute_vec": [90, 104, 118, 143]
+  }
+}

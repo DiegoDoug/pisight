@@ -1,0 +1,33 @@
+[
+  {
+    "kismet.alert.timestamp": 1717243700.0,
+    "kismet.alert.severity": 20,
+    "kismet.alert.header": "APSPOOF",
+    "kismet.alert.class": "spoof",
+    "kismet.alert.text": "Beacon mismatch for a previously observed BSSID",
+    "kismet.alert.source_mac": "02:00:5E:11:22:33"
+  },
+  {
+    "kismet.alert.timestamp": 1717243750.0,
+    "kismet.alert.severity": 5,
+    "kismet.alert.header": "PROBENOJOIN",
+    "kismet.alert.text": "Client probing without joining"
+  },
+  {
+    "kismet.alert.timestamp": 1717243600.0,
+    "kismet.alert.severity": "MEDIUM",
+    "kismet.alert.header": "DISASSOCTRAFFIC",
+    "kismet.alert.text": "Traffic after disassociation"
+  },
+  {
+    "kismet.alert.timestamp": 1717243550.0,
+    "kismet.alert.severity": 99,
+    "kismet.alert.header": "UNKNOWNSCALE",
+    "kismet.alert.text": "Severity above the documented scale"
+  },
+  {
+    "kismet.alert.timestamp": 1717243500.0,
+    "kismet.alert.header": "",
+    "kismet.alert.text": ""
+  }
+]
