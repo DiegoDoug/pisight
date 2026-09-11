@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.env
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# PiSight local state
+artifacts/
+*.log
+
+# Never commit real capture data or secrets
+*.kismet
+*.kismet-journal
+*.pcapng
+*.pcap
+secrets.toml
+pisight.env
