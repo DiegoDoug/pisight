@@ -393,3 +393,18 @@ carry it. Behaviour is equivalent for our uses.
 
 Each of these is a guess made in the absence of hardware. They are recorded here so they get
 revisited with evidence rather than being mistaken for considered defaults.
+
+
+## Follow-up verification decisions (2026-09-13)
+
+- HTTP clients ignore ambient proxy variables: local observations and API cookies must
+  travel directly to the configured Kismet host. Custom proxy deployment is not supported.
+- A recent-time query does not bound device cardinality. Every HTTP response now has a
+  4 MiB decoded-byte ceiling before JSON parsing; oversized responses fail gracefully
+  and critical endpoint failures retain the last snapshot. This does not claim server pagination.
+- The Overview NEW counter accumulates process-first sightings, while row NEW badges
+  describe the current poll. Tracking remains capped at 4096 keys; a returning evicted
+  key can be counted again, so totals after eviction are approximate. Restart resets both.
+- Restart limits belong in systemd's Unit section. DRM device access uses the char-drm
+  group rather than a directory path; actual device access remains hardware-unverified.
+- Clone examples select the feature branch while PR #1 is unmerged.

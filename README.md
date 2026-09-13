@@ -107,7 +107,7 @@ Full detail in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 Requires **Python 3.11 or newer**. Nothing else — no radio, no Kismet, no Pi.
 
 ```bash
-git clone https://github.com/DiegoDoug/pisight.git
+git clone --branch feat/pisight-v1-mvp https://github.com/DiegoDoug/pisight.git
 cd pisight
 
 python3 -m venv .venv
@@ -173,7 +173,7 @@ ssh pi@raspberrypi.local
 sudo apt update
 sudo apt install -y git python3-venv python3-pip
 
-git clone https://github.com/DiegoDoug/pisight.git
+git clone --branch feat/pisight-v1-mvp https://github.com/DiegoDoug/pisight.git
 cd pisight
 
 sudo bash scripts/install-rpi.sh --dry-run    # preview every action, change nothing
@@ -345,3 +345,15 @@ the Pi to close that gap.
 MIT. See [LICENSE](LICENSE).
 
 PiSight is a client for Kismet and is not affiliated with or endorsed by the Kismet project.
+
+
+### Follow-up limits
+
+The NEW tile accumulates first sightings during this process; per-device NEW badges last
+one poll. After the bounded 4096-key tracker evicts an old key, a returning device can be
+counted again. Totals in that case are approximate.
+
+HTTP responses are limited to 4 MiB of decoded data before parsing. An oversized critical
+response leaves the last snapshot visible as offline; reduce the recent-device window
+if necessary. PiSight ignores ambient HTTP proxy settings to keep observations and API
+cookies on the explicitly configured connection.

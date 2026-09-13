@@ -28,17 +28,13 @@ __all__ = ["RedactingFilter", "configure_logging"]
 #: What a redacted secret looks like in the log.
 REDACTED = "[redacted]"
 
-#: Shortest token we bother redacting; below this the value is more likely to be a stray
-#: word than a credential, and redacting it would mangle unrelated messages.
-_MIN_TOKEN_LENGTH = 8
-
 
 class RedactingFilter(logging.Filter):
     """Removes the API token from log records and flattens them to a single line."""
 
     def __init__(self, token: str | None = None) -> None:
         super().__init__()
-        self._token = token if token and len(token) >= _MIN_TOKEN_LENGTH else None
+        self._token = token or None
 
     def filter(self, record: logging.LogRecord) -> bool:
         """Rewrite the record in place; always returns True so nothing is dropped."""
@@ -53,6 +49,17 @@ class RedactingFilter(logging.Filter):
         record.msg = sanitize_text(message, max_length=1000)
         record.args = ()
         return True
+
+
+class SafeFormatter(logging.Formatter):
+    """Redact the final formatted line, including chained exceptions and stack traces."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        text = super().format(record)
+        token = get_api_token()
+        if token:
+            text = text.replace(token, REDACTED)
+        return sanitize_text(text, max_length=8000)
 
 
 def configure_logging(level: str = "INFO", *, stream: TextIO | None = None) -> None:
@@ -70,7 +77,7 @@ def configure_logging(level: str = "INFO", *, stream: TextIO | None = None) -> N
             root.removeHandler(handler)
 
     handler = logging.StreamHandler(stream if stream is not None else sys.stderr)
-    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)-7s %(name)s: %(message)s"))
+    handler.setFormatter(SafeFormatter("%(asctime)s %(levelname)-7s %(name)s: %(message)s"))
     handler.addFilter(RedactingFilter(get_api_token()))
     handler._pisight = True  # type: ignore[attr-defined]
     root.addHandler(handler)

@@ -73,7 +73,10 @@ jobs:
         run: pytest --cov=pisight --cov-report=term-missing --cov-report=xml
 
       - name: Check shell script syntax
-        run: bash -n scripts/*.sh
+        run: |
+          for script in scripts/*.sh; do
+            bash -n "$script" || exit 1
+          done
 
       - name: Build the package
         run: python -m build

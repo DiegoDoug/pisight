@@ -102,7 +102,7 @@ def test_first_fetch_marks_every_device_new_and_the_second_does_not() -> None:
         provider.close()
 
     assert first.new_device_count == 4
-    assert second.new_device_count == 0
+    assert second.new_device_count == first.new_device_count
     assert all(not device.is_new for device in second.devices)
 
 
@@ -471,3 +471,43 @@ def test_kismet_config_defaults_are_bounded() -> None:
     assert kismet.max_devices > 0
     assert kismet.max_alerts > 0
     assert kismet.device_window_seconds > 0
+
+
+def test_oversized_stream_is_closed_before_reading_the_entire_body() -> None:
+    from pisight.providers.kismet import MAX_RESPONSE_BYTES
+
+    class LargeStream(httpx.SyncByteStream):
+        closed = False
+        chunks_read = 0
+
+        def __iter__(self):  # type: ignore[no-untyped-def]
+            for _ in range(1000):
+                self.chunks_read += 1
+                yield b" " * 65536
+
+        def close(self) -> None:
+            self.closed = True
+
+    stream = LargeStream()
+    provider = make_provider(lambda request: httpx.Response(200, stream=stream))
+    with pytest.raises(MalformedResponse, match="size limit"):
+        provider.fetch()
+    assert stream.closed
+    assert stream.chunks_read <= MAX_RESPONSE_BYTES // 65536 + 1
+
+
+def test_client_does_not_inherit_ambient_proxy_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ALL_PROXY", "socks5://127.0.0.1:1")
+    provider = KismetDashboardProvider(
+        AppConfig(), api_token=TOKEN, host_health=HostHealthProvider(".")
+    )
+    try:
+        assert provider._client.trust_env is False
+    finally:
+        provider.close()
+
+
+def test_redirect_cannot_be_mistaken_for_successful_login() -> None:
+    provider = make_provider(lambda request: httpx.Response(302, headers={"location": "/login"}))
+    with pytest.raises(ProviderUnavailable, match="302"):
+        provider.check_login()

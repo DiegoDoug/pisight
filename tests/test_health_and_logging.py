@@ -153,11 +153,11 @@ def test_a_token_appearing_mid_string_is_redacted() -> None:
     assert token not in record.getMessage()
 
 
-def test_very_short_tokens_are_not_redacted() -> None:
-    """Redacting a 3-character value would mangle unrelated messages."""
+def test_even_short_tokens_are_redacted() -> None:
+    """Token confidentiality also applies to short operator-supplied values."""
     record = make_record("the cat sat")
     RedactingFilter("cat").filter(record)
-    assert "cat" in record.getMessage()
+    assert "cat" not in record.getMessage()
 
 
 def test_no_token_configured_leaves_the_message_intact() -> None:
@@ -222,3 +222,20 @@ def test_configure_logging_quiets_httpx() -> None:
             if getattr(handler, "_pisight", False):
                 root.removeHandler(handler)
         root.handlers = original
+
+
+def test_exception_traceback_is_redacted_and_flattened(monkeypatch: pytest.MonkeyPatch) -> None:
+    from pisight.logging_setup import SafeFormatter
+
+    token = "synthetic-traceback-token"
+    monkeypatch.setenv("PISIGHT_KISMET_API_TOKEN", token)
+    try:
+        raise ValueError(f"{token}\nforged log line")
+    except ValueError:
+        import sys
+
+        record = logging.LogRecord("test", logging.ERROR, __file__, 1, "failed", (), sys.exc_info())
+    rendered = SafeFormatter("%(message)s").format(record)
+    assert token not in rendered
+    assert "\n" not in rendered
+    assert REDACTED in rendered

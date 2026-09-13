@@ -76,6 +76,7 @@ class NewDeviceTracker:
         self._max_keys = max_keys
         # dict preserves insertion order, giving FIFO eviction without another dependency.
         self._seen: dict[str, None] = {}
+        self.total_count = 0
 
     @property
     def known_count(self) -> int:
@@ -91,6 +92,7 @@ class NewDeviceTracker:
         for device in devices:
             is_new = device.key not in self._seen
             if is_new:
+                self.total_count += 1
                 self._seen[device.key] = None
                 while len(self._seen) > self._max_keys:
                     self._seen.pop(next(iter(self._seen)))
@@ -100,6 +102,7 @@ class NewDeviceTracker:
     def reset(self) -> None:
         """Forget every device key (used by tests and by the screenshot renderer)."""
         self._seen.clear()
+        self.total_count = 0
 
 
 def finalize_snapshot(
@@ -115,5 +118,5 @@ def finalize_snapshot(
     return replace(
         snapshot,
         devices=devices,
-        new_device_count=sum(1 for device in devices if device.is_new),
+        new_device_count=tracker.total_count,
     )

@@ -155,7 +155,7 @@ class ChannelsScreen:
             # Channel label, marked with a caret when the radio is tuned there right now.
             label = f">{row.channel}" if is_current else f" {row.channel}"
             label_color = theme.WARN if is_current else theme.TEXT
-            label_width = 22
+            label_width = fonts.measure(fonts.small, ">165") + 2
             draw_text(
                 surface, fonts, fonts.small, label, inner.x, y, label_color, max_width=label_width
             )

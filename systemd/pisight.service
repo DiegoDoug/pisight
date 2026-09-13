@@ -10,6 +10,9 @@ After=network-online.target kismet.service
 Wants=network-online.target
 Wants=kismet.service
 
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
 [Service]
 Type=simple
 
@@ -37,8 +40,6 @@ ExecStart=/opt/pisight/venv/bin/pisight --mode live --fullscreen
 # hidden by an endless restart.
 Restart=on-failure
 RestartSec=5s
-StartLimitIntervalSec=300
-StartLimitBurst=5
 
 # A finite startup timeout: if SDL cannot open the display it must fail, not hang.
 TimeoutStartSec=30
@@ -59,7 +60,8 @@ NoNewPrivileges=yes
 PrivateTmp=yes
 PrivateDevices=no
 # ^ must stay "no": the display and touch device nodes are the whole point.
-DeviceAllow=/dev/dri rw
+DevicePolicy=closed
+DeviceAllow=char-drm rw
 DeviceAllow=/dev/fb0 rw
 DeviceAllow=char-input r
 

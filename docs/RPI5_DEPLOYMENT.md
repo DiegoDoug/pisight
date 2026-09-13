@@ -115,7 +115,7 @@ face the interface was designed against.
 
 ```bash
 cd ~
-git clone https://github.com/DiegoDoug/pisight.git
+git clone --branch feat/pisight-v1-mvp https://github.com/DiegoDoug/pisight.git
 cd pisight
 ```
 

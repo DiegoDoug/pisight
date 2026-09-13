@@ -250,7 +250,7 @@ def test_new_marks_only_the_first_sighting() -> None:
         provider.close()
 
     assert first.new_device_count == len(first.devices)
-    assert second.new_device_count == 0
+    assert second.new_device_count == first.new_device_count
 
 
 def test_tracker_is_bounded() -> None:
@@ -309,3 +309,17 @@ def test_mock_never_emits_a_routable_vendor_mac() -> None:
                 assert first_octet & 0b10, f"{device.mac} is not locally administered"
     finally:
         provider.close()
+
+
+def test_new_since_start_survives_empty_snapshots_and_resets_explicitly() -> None:
+    from pisight.models import DashboardSnapshot, DeviceSummary
+    from pisight.providers.base import finalize_snapshot
+
+    tracker = NewDeviceTracker()
+    device = DeviceSummary(key="synthetic-first", mac="02:00:5E:00:00:01", display_name="")
+    first = finalize_snapshot(DashboardSnapshot(devices=(device,)), tracker)
+    assert first.new_device_count == 1
+    assert finalize_snapshot(DashboardSnapshot(), tracker).new_device_count == 1
+    assert finalize_snapshot(first, tracker).new_device_count == 1
+    tracker.reset()
+    assert finalize_snapshot(DashboardSnapshot(), tracker).new_device_count == 0

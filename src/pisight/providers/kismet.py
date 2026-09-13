@@ -12,6 +12,7 @@ URL, a log record, an exception message or a screenshot.
 
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import replace
 from typing import Any
@@ -51,6 +52,8 @@ __all__ = ["KISMET_TOKEN_COOKIE", "KismetDashboardProvider", "build_device_query
 logger = logging.getLogger(__name__)
 
 #: Cookie name Kismet accepts for API-token authentication.
+MAX_RESPONSE_BYTES = 4 * 1024 * 1024
+
 KISMET_TOKEN_COOKIE = "KISMET"  # noqa: S105 - cookie name, not a secret
 
 #: Field simplification sent with the device query. Requesting only what the four screens
@@ -119,6 +122,7 @@ class KismetDashboardProvider:
             timeout=timeout,
             cookies=cookies,
             follow_redirects=False,
+            trust_env=False,  # Never route local observations or cookies through ambient proxies.
             headers={"Accept": "application/json", "User-Agent": "PiSight/0.1 (read-only)"},
             limits=httpx.Limits(max_connections=4, max_keepalive_connections=2),
         )
@@ -134,24 +138,29 @@ class KismetDashboardProvider:
         lives in a cookie the client manages, so it cannot leak through a formatted URL.
         """
         try:
-            response = self._client.request(method, path, json=json_body)
+            with self._client.stream(method, path, json=json_body) as response:
+                if response.status_code in (401, 403):
+                    raise ProviderAuthError(
+                        f"{method} {path}: Kismet rejected the API token "
+                        f"(HTTP {response.status_code}); check PISIGHT_KISMET_API_TOKEN"
+                    )
+                if not 200 <= response.status_code < 300:
+                    raise ProviderUnavailable(f"{method} {path}: HTTP {response.status_code}")
+                # Bound decoded bytes, including compressed and chunked responses, before
+                # JSON parsing. A time window alone does not bound a busy device view.
+                payload = bytearray()
+                for chunk in response.iter_bytes(chunk_size=65536):
+                    if len(payload) + len(chunk) > MAX_RESPONSE_BYTES:
+                        raise MalformedResponse(f"{method} {path}: response exceeds size limit")
+                    payload.extend(chunk)
         except httpx.TimeoutException as exc:
             raise ProviderUnavailable(f"{method} {path}: timed out") from exc
         except httpx.HTTPError as exc:
             raise ProviderUnavailable(f"{method} {path}: {type(exc).__name__}") from exc
 
-        if response.status_code in (401, 403):
-            raise ProviderAuthError(
-                f"{method} {path}: Kismet rejected the API token "
-                f"(HTTP {response.status_code}); check that "
-                "PISIGHT_KISMET_API_TOKEN holds a valid readonly token"
-            )
-        if response.status_code >= 400:
-            raise ProviderUnavailable(f"{method} {path}: HTTP {response.status_code}")
-
         try:
-            return response.json()
-        except ValueError as exc:
+            return json.loads(payload)
+        except (ValueError, RecursionError) as exc:
             raise MalformedResponse(f"{method} {path}: response was not valid JSON") from exc
 
     def _get(self, path: str) -> Any:

@@ -34,7 +34,14 @@ def draw_status_bar(surface: pygame.Surface, ctx: RenderContext) -> None:
 
     snapshot = ctx.snapshot
     capture = snapshot.capture if snapshot is not None else None
-    capturing = bool(capture and capture.kismet_online) and not ctx.is_offline
+    capturing = bool(
+        snapshot
+        and capture
+        and capture.kismet_online
+        and any(source.running for source in snapshot.datasources)
+        and not ctx.is_offline
+        and not ctx.is_stale
+    )
 
     text_y = (rect.height - fonts.small.get_height()) // 2
 

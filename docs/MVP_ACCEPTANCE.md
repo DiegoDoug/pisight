@@ -4,7 +4,7 @@ A requirement-by-requirement review of PiSight v0.1.0 against its specification.
 
 **Legend:** ✅ done and verified · ⚠️ done with a caveat · ⏳ blocked on hardware · ❌ not done
 
-**Verification environment:** Windows 11 desktop, Python 3.11.9 (matching the Raspberry Pi OS
+**Original implementation verification environment (historical record):** Windows 11 desktop, Python 3.11.9 (matching the Raspberry Pi OS
 Bookworm target), SDL dummy video driver. **No Raspberry Pi, display, touch panel or Wi-Fi adapter
 was involved in any check below.**
 
@@ -353,3 +353,43 @@ and, in deployment, by the kernel.
 
 **The MVP is not hardware-validated, and this repository does not claim otherwise.**
 `docs/HARDWARE_VALIDATION.md` is the checklist that closes the remaining gap.
+
+
+## Follow-up verification — 2026-09-13
+
+Reviewed the existing feature branch at `3acc896875e9b4aa9f94b3b5e3c561020c588a42`
+against the supplied MVP requirements on Linux x86_64, Python 3.12.14. The Windows
+results above are the original author's record, not measurements from this follow-up.
+
+Defects corrected:
+
+1. Ambient SOCKS proxy settings broke construction of the live HTTP client (two failing
+   tests). The product client now uses a direct connection without ambient proxies.
+2. A recent-time query and a parser-side cap did not bound HTTP response memory.
+   Streaming now rejects decoded responses over 4 MiB before JSON parsing.
+3. Redirect responses could be accepted as successful login responses; only 2xx succeeds.
+4. NEW since startup incorrectly reset each poll. It now accumulates first sightings;
+   bounded-key eviction can cause repeat counts, explicitly documented as approximate.
+5. Exception traces escaped message-only token redaction. The final formatter also
+   redacts tracebacks and flattens their control characters, including short tokens.
+6. The capture indicator used API connectivity alone; it now also requires a running
+   datasource and fresh data. This indicates capture activity, not confirmed disk logging.
+7. systemd ignored StartLimitIntervalSec in Service; limits now live in Unit.
+   The device allowlist now names char-drm instead of the /dev/dri directory.
+8. CI's `bash -n scripts/*.sh` parsed only the first script. CI now loops over every script.
+9. Clone examples selected main, where implementation files are absent. They now select
+   the existing feature branch.
+10. Three-digit channel labels clipped on Linux DejaVu Sans. Label width is measured
+    against a full three-digit channel plus the current-channel marker.
+
+Follow-up gates: editable install, Ruff format/lint, strict mypy, **520 pytest tests**,
+wheel/sdist build, individual shell syntax checks, 5-second headless mock smoke, doctor
+without a network request, and all four generated 320x240 screenshots passed.
+Screenshots were visually inspected. No real observations or credentials were used.
+Official device-view documentation was read to confirm negative-time read queries:
+https://www.kismetwireless.net/docs/api/device_views/
+
+Hardware validation remains NOT YET VERIFIED. No live Kismet server was available;
+real field compatibility, display/input permissions, touch and performance still require
+the hardware checklist. The finite Type=simple startup timeout is not a display-readiness
+probe. The original broad completion statements do not establish those properties.
