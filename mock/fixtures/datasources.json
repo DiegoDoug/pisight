@@ -1,0 +1,22 @@
+[
+  {
+    "kismet.datasource.uuid": "5B1E0000-0000-4000-8000-000000000001",
+    "kismet.datasource.name": "wlan1mon",
+    "kismet.datasource.interface": "wlan1",
+    "kismet.datasource.running": 1,
+    "kismet.datasource.hopping": 1,
+    "kismet.datasource.channel": "6",
+    "kismet.datasource.num_packets": 128394,
+    "kismet.datasource.error": 0,
+    "kismet.datasource.type_driver": "linuxwifi"
+  },
+  {
+    "kismet.datasource.uuid": "5B1E0000-0000-4000-8000-000000000002",
+    "kismet.datasource.name": "wlan2mon",
+    "kismet.datasource.interface": "wlan2",
+    "kismet.datasource.running": false,
+    "kismet.datasource.hopping": false,
+    "kismet.datasource.error": true,
+    "kismet.datasource.error_reason": "adapter removed"
+  }
+]

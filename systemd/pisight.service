@@ -1,0 +1,108 @@
+[Unit]
+Description=PiSight passive Wi-Fi reconnaissance dashboard
+Documentation=https://github.com/DiegoDoug/pisight/blob/main/docs/RPI5_DEPLOYMENT.md
+
+# PiSight is a display client for Kismet. It is useful only once the network is up and
+# Kismet is listening, but it must not *require* Kismet: the whole point of the offline
+# indicator is that PiSight keeps running and keeps saying so when Kismet is down.
+# Hence Wants= (a preference) rather than Requires= (a dependency).
+After=network-online.target kismet.service
+Wants=network-online.target
+Wants=kismet.service
+
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+
+# --- Identity -----------------------------------------------------------------------
+# PiSight never needs root. It reads an HTTP API on loopback and draws to a display.
+# The video and input groups are what allow direct DRM/KMS output and touch input under
+# deployment profile A; they are the only elevated access this unit grants.
+User=pisight
+Group=pisight
+SupplementaryGroups=video input render
+
+# --- Configuration and secrets -------------------------------------------------------
+# The environment file is root-owned and mode 0600. systemd reads it as root before
+# dropping privileges, so the token never has to be readable by the pisight user on disk.
+EnvironmentFile=/etc/pisight/pisight.env
+Environment=PISIGHT_CONFIG=/etc/pisight/config.toml
+Environment=PYTHONUNBUFFERED=1
+
+WorkingDirectory=/opt/pisight
+ExecStart=/opt/pisight/venv/bin/pisight --mode live --fullscreen
+
+# --- Restart policy -------------------------------------------------------------------
+# Restart on failure with a delay, but give up after repeated rapid failures rather than
+# looping forever: a crash loop on a headless Pi is better surfaced by a stopped unit than
+# hidden by an endless restart.
+Restart=on-failure
+RestartSec=5s
+
+# A finite startup timeout: if SDL cannot open the display it must fail, not hang.
+TimeoutStartSec=30
+TimeoutStopSec=10
+
+# --- Logging ---------------------------------------------------------------------------
+# Straight to the journal. PiSight writes no log files, so it cannot fill the capture
+# volume. Read with: journalctl -u pisight -f
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=pisight
+
+# --- Sandboxing ------------------------------------------------------------------------
+# PiSight reads one HTTP endpoint on loopback, reads sysfs for temperature, and calls
+# statvfs on the Kismet log path. It writes nothing anywhere. The directives below make
+# that the enforced reality rather than a claim.
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=no
+# ^ must stay "no": the display and touch device nodes are the whole point.
+DevicePolicy=closed
+DeviceAllow=char-drm rw
+DeviceAllow=/dev/fb0 rw
+DeviceAllow=char-input r
+
+ProtectSystem=strict
+# ProtectSystem=strict makes the entire filesystem read-only except /dev, /proc and /sys.
+# PiSight needs no writable path at all, so no ReadWritePaths= is granted.
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+
+# Loopback and IP are needed to reach Kismet; nothing else is.
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+# AF_PACKET is deliberately absent: without it this process cannot open a raw socket, so
+# it is incapable of capturing or injecting packets even if its code were changed to try.
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=no
+# ^ "no" because some Mesa/SDL drivers JIT shaders; tightening this breaks KMS output.
+
+# Drop every capability. PiSight needs none, in particular not NET_ADMIN or NET_RAW,
+# which is what putting an interface into monitor mode would require.
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources @mount @swap @reboot @raw-io @module
+SystemCallArchitectures=native
+
+# --- Resource limits -------------------------------------------------------------------
+# PiSight's memory is bounded by design (one snapshot slot, capped device and alert lists).
+# This limit turns a regression in that property into a restart instead of an OOM that
+# takes Kismet down with it.
+MemoryMax=256M
+TasksMax=32
+
+[Install]
+WantedBy=multi-user.target

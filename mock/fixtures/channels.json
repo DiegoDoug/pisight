@@ -1,0 +1,27 @@
+{
+  "kismet.channeltracker.frequency_map": {
+    "2412000": {
+      "kismet.channelrec.frequency": 2412000,
+      "kismet.channelrec.device_rrd": {"kismet.common.rrd.last_value": 7},
+      "kismet.channelrec.packets_rrd": {"kismet.common.rrd.last_value": 240}
+    },
+    "2437000": {
+      "kismet.channelrec.frequency": 2437000,
+      "kismet.channelrec.device_rrd": {"kismet.common.rrd.last_value": 12},
+      "kismet.channelrec.packets_rrd": {"kismet.common.rrd.last_value": 980}
+    },
+    "5180000": {
+      "kismet.channelrec.frequency": 5180000,
+      "kismet.channelrec.device_rrd": {"kismet.common.rrd.last_value": 3},
+      "kismet.channelrec.packets_rrd": {"kismet.common.rrd.last_value": 55}
+    },
+    "5745000": {
+      "kismet.channelrec.frequency": 5745000,
+      "kismet.channelrec.device_rrd": {"kismet.common.rrd.last_value": 0}
+    },
+    "junk": {
+      "kismet.channelrec.frequency": "not a frequency"
+    },
+    "9999999": "this record is a string, not an object"
+  }
+}

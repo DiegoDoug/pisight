@@ -1,0 +1,17 @@
+[
+  {
+    "kismet.device.base.key": "SYNTH_MIN_1"
+  },
+  {
+    "kismet.device.base.macaddr": "02:00:5E:00:00:01",
+    "kismet.device.base.type": null,
+    "kismet.device.base.channel": "",
+    "kismet.device.base.frequency": "not-a-number",
+    "kismet.device.base.last_time": "1717243000",
+    "kismet.device.base.packets": -5,
+    "kismet.device.base.signal": {}
+  },
+  {
+    "no": "usable identity fields at all"
+  }
+]
